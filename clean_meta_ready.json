@@ -1,0 +1,63 @@
+{
+  "target_col": "Churn",
+  "numeric_cols": [
+    "Tenure",
+    "WarehouseToHome",
+    "NumberOfDeviceRegistered",
+    "SatisfactionScore",
+    "NumberOfAddress",
+    "Complain",
+    "DaySinceLastOrder",
+    "CashbackAmount",
+    "DaySinceLastOrder_was_missing",
+    "Tenure_was_missing",
+    "WarehouseToHome_was_missing",
+    "EarlyTenure",
+    "FarFromWarehouse",
+    "LowCashback",
+    "DevicesPerAddress",
+    "LowSatisfaction",
+    "Complain_LowSat"
+  ],
+  "categorical_cols": [
+    "PreferedOrderCat",
+    "MaritalStatus",
+    "TenureBand"
+  ],
+  "ui_options": {
+    "PreferedOrderCat": [
+      "Fashion",
+      "Grocery",
+      "Laptop & Accessory",
+      "Mobile Phone",
+      "Others"
+    ],
+    "MaritalStatus": [
+      "Divorced",
+      "Married",
+      "Single"
+    ],
+    "TenureBand": [
+      "12\u201324",
+      "6\u201312",
+      ">24",
+      "\u22646"
+    ]
+  },
+  "engineered_features": [
+    "EarlyTenure",
+    "TenureBand",
+    "FarFromWarehouse",
+    "LowCashback",
+    "DevicesPerAddress",
+    "LowSatisfaction",
+    "Complain_LowSat"
+  ],
+  "feature_thresholds": {
+    "tenure_early_max": 6,
+    "distance_far_min": 15,
+    "sat_low_max": 3,
+    "cashback_q20": 140.834
+  },
+  "decision_threshold": 0.57
+}
