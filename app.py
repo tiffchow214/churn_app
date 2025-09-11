@@ -1,16 +1,26 @@
+from pathlib import Path
+MODEL_PATH = Path("./churn_pipe.joblib")
+META_PATH = Path("./clean_meta_ready.json")
+DRIVERS_JSON_PATH = Path("./model_drivers.json")  # << add this line
 
 import gradio as gr
 import pandas as pd
 
 def load_drivers_df():
-    if DRIVERS_JSON_PATH.exists():
-        try:
-            df = pd.read_json(DRIVERS_JSON_PATH)
-            if "coef" in df.columns:
-                df = df.sort_values("coef", ascending=False)
-            return df
-        except Exception:
-            pass
+    try:
+        if DRIVERS_JSON_PATH.exists():
+            import json, pandas as pd
+            with open(DRIVERS_JSON_PATH, "r") as f:
+                payload = json.load(f)
+            # handle either dict with top_* keys or a plain list
+            if isinstance(payload, dict) and ("top_positive" in payload or "top_negative" in payload):
+                rows = payload.get("top_positive", []) + payload.get("top_negative", [])
+            else:
+                rows = payload
+            return pd.DataFrame(rows)
+    except Exception as e:
+        print("Drivers load warning:", e)
+    import pandas as pd
     return pd.DataFrame(columns=["feature","coef","odds_ratio"])
 
 drivers_df = load_drivers_df()
