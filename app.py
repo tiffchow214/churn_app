@@ -1,34 +1,287 @@
+# app.py
+# E-commerce churn predictor (Gradio) — Hugging Face Space
+
 from pathlib import Path
+import json, joblib, numpy as np, pandas as pd, gradio as gr
+
+# ----------------- Paths to artifacts in the Space -----------------
 MODEL_PATH = Path("./churn_pipe.joblib")
 META_PATH = Path("./clean_meta_ready.json")
-DRIVERS_JSON_PATH = Path("./model_drivers.json")  # << add this line
+DRIVERS_JSON_PATH = Path("./model_drivers.json")   # optional
 
-import gradio as gr
-import pandas as pd
+# ----------------- Safe loaders -----------------
+def load_meta():
+    """Load meta JSON or return safe defaults so the UI still boots."""
+    try:
+        with open(META_PATH, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print("Meta load warning:", e)
+        return {
+            "target_col": "Churn",
+            "numeric_cols": [],
+            "categorical_cols": [],
+            "ui_options": {},
+            "feature_thresholds": {},
+            "decision_threshold": 0.5,
+        }
+
+def load_model():
+    try:
+        if MODEL_PATH.exists():
+            return joblib.load(MODEL_PATH)
+        print("Model not found:", MODEL_PATH)
+    except Exception as e:
+        print("Model load warning:", e)
+    return None
 
 def load_drivers_df():
+    """Load optional model_drivers.json for the drivers tab."""
     try:
         if DRIVERS_JSON_PATH.exists():
-            import json, pandas as pd
             with open(DRIVERS_JSON_PATH, "r") as f:
                 payload = json.load(f)
-            # handle either dict with top_* keys or a plain list
-            if isinstance(payload, dict) and ("top_positive" in payload or "top_negative" in payload):
+            if isinstance(payload, dict) and (
+                "top_positive" in payload or "top_negative" in payload
+            ):
                 rows = payload.get("top_positive", []) + payload.get("top_negative", [])
             else:
                 rows = payload
             return pd.DataFrame(rows)
     except Exception as e:
         print("Drivers load warning:", e)
-    import pandas as pd
-    return pd.DataFrame(columns=["feature","coef","odds_ratio"])
+    return pd.DataFrame(columns=["feature", "coef", "odds_ratio"])
 
+# ----------------- Load artifacts once -----------------
+meta = load_meta()
+pipe = load_model()
 drivers_df = load_drivers_df()
 
-cat_opts = meta.get("ui_options", {})
-marital_choices = cat_opts.get("MaritalStatus", ["Married","Single","Divorced"])
-cat_choices = cat_opts.get("PreferedOrderCat", ["Laptop & Accessory","Mobile Phone","Fashion","Grocery","Others"])
+thr_f2 = float(meta.get("decision_threshold", 0.5))  # from training (recall-leaning)
+thr_profit_default = 0.39  # you can change later; app lets user override
 
+feat_thr = meta.get("feature_thresholds", {})
+ui = meta.get("ui_options", {})
+
+# Dropdown choices (fallback if ui_options missing)
+ORDER_CATS = ui.get(
+    "PreferedOrderCat",
+    ["Mobile Phone", "Fashion", "Laptop & Accessory", "Others", "Grocery"],
+)
+MARITALS = ui.get("MaritalStatus", ["Single", "Married", "Divorced"])
+
+# Expected columns from training
+NUM_COLS = meta.get("numeric_cols", [])
+CAT_COLS = meta.get("categorical_cols", [])
+EXPECTED_COLS = NUM_COLS + CAT_COLS
+TARGET = meta.get("target_col", "Churn")
+
+# ----------------- Input schema for the UI -----------------
+REQUIRED_COLS = [
+    "Tenure",
+    "WarehouseToHome",
+    "NumberOfDeviceRegistered",
+    "SatisfactionScore",
+    "MaritalStatus",
+    "NumberOfAddress",
+    "Complain",
+    "DaySinceLastOrder",
+    "CashbackAmount",
+    "PreferedOrderCat",
+]
+
+# ----------------- Feature engineering to match training -----------------
+def add_missing_flags(df: pd.DataFrame) -> pd.DataFrame:
+    """Recreate *_was_missing flags as during cleaning."""
+    out = df.copy()
+    for base in ["DaySinceLastOrder", "Tenure", "WarehouseToHome"]:
+        flag = f"{base}_was_missing"
+        if flag not in out.columns:
+            out[flag] = out[base].isna().astype(int) if base in out.columns else 1
+    return out
+
+def engineer(df_row: pd.DataFrame) -> pd.DataFrame:
+    """Engineer the same features you used in training."""
+    r = df_row.copy()
+    t_early = int(feat_thr.get("tenure_early_max", 6))
+    d_far = float(feat_thr.get("distance_far_min", 15))
+    sat_low = int(feat_thr.get("sat_low_max", 3))
+    # if not present in meta, compute q20 per input batch (ok)
+    cb_q20 = float(feat_thr.get("cashback_q20", r["CashbackAmount"].quantile(0.20)))
+
+    # EarlyTenure
+    if "Tenure" in r:
+        r["EarlyTenure"] = (pd.to_numeric(r["Tenure"], errors="coerce") <= t_early).astype(int)
+
+    # TenureBand
+    if "Tenure" in r:
+        r["Tenure"] = pd.to_numeric(r["Tenure"], errors="coerce")
+        r["TenureBand"] = pd.cut(
+            r["Tenure"],
+            bins=[-0.1, 6, 12, 24, np.inf],
+            labels=["≤6", "6–12", "12–24", ">24"],
+        ).astype(str)
+
+    # Distance friction
+    if "WarehouseToHome" in r:
+        r["WarehouseToHome"] = pd.to_numeric(r["WarehouseToHome"], errors="coerce")
+        r["FarFromWarehouse"] = (r["WarehouseToHome"] >= d_far).astype(int)
+
+    # Low cashback
+    if "CashbackAmount" in r:
+        r["CashbackAmount"] = pd.to_numeric(r["CashbackAmount"], errors="coerce")
+        r["LowCashback"] = (r["CashbackAmount"] <= cb_q20).astype(int)
+
+    # Devices per address (avoid 0)
+    if "NumberOfDeviceRegistered" in r and "NumberOfAddress" in r:
+        num = pd.to_numeric(r["NumberOfDeviceRegistered"], errors="coerce")
+        den = pd.to_numeric(r["NumberOfAddress"], errors="coerce").clip(lower=1)
+        r["DevicesPerAddress"] = num / den
+
+    # Low satisfaction & interaction
+    if "SatisfactionScore" in r:
+        r["SatisfactionScore"] = pd.to_numeric(r["SatisfactionScore"], errors="coerce")
+        r["LowSatisfaction"] = (r["SatisfactionScore"] <= sat_low).astype(int)
+
+    if "Complain" in r:
+        comp = normalize_complain(r["Complain"])
+        r["Complain"] = comp
+        if "LowSatisfaction" in r:
+            r["Complain_LowSat"] = ((comp == 1) & (r["LowSatisfaction"] == 1)).astype(int)
+
+    # Normalize category text (robust Mobile → Mobile Phone)
+    if "PreferedOrderCat" in r:
+        r["PreferedOrderCat"] = (
+            r["PreferedOrderCat"]
+            .astype(str)
+            .str.strip()
+            .str.replace(r"\s+", " ", regex=True)
+            .str.replace(r"(?i)^mobile$", "Mobile Phone", regex=True)
+        )
+
+    return r
+
+def align_to_training_columns(df_any: pd.DataFrame) -> pd.DataFrame:
+    """Make sure all expected training-time columns exist and types are sane."""
+    out = df_any.copy()
+
+    for c in EXPECTED_COLS:
+        if c not in out.columns:
+            out[c] = 0 if c in NUM_COLS else ""
+
+    # cast numeric/categorical
+    for c in NUM_COLS:
+        out[c] = pd.to_numeric(out[c], errors="coerce").fillna(0)
+
+    for c in CAT_COLS:
+        out[c] = out[c].astype(str).fillna("")
+
+    return out[EXPECTED_COLS]
+
+def normalize_complain(col_like) -> pd.Series:
+    """Accept Yes/No/True/False/1/0 → 0/1."""
+    def _to01(v):
+        s = str(v).strip().lower()
+        if s in {"1", "yes", "y", "true", "t"}:
+            return 1
+        return 0
+    return pd.Series([_to01(v) for v in col_like], index=getattr(col_like, "index", None))
+
+def flags_for_row(s: pd.Series) -> str:
+    msgs = []
+    if s.get("EarlyTenure", 0) == 1:
+        msgs.append("Early tenure (≤6 mo)")
+    if s.get("Complain", 0) == 1:
+        msgs.append("Recent complaint")
+    if s.get("LowCashback", 0) == 1:
+        msgs.append("Low cashback (≤Q20)")
+    if s.get("FarFromWarehouse", 0) == 1:
+        msgs.append("Far from warehouse (≥15 km)")
+    if s.get("Complain_LowSat", 0) == 1:
+        msgs.append("Complaint + Low satisfaction")
+    return " | ".join(msgs) if msgs else "No risk flags"
+
+def choose_threshold(mode: str, custom_thr: float, profit_thr: float) -> float:
+    if mode == "Recall (F2)":
+        return float(thr_f2)
+    if mode == "Profit (ROI)":
+        return float(profit_thr)
+    return float(custom_thr)
+
+# ----------------- Predictors -----------------
+def predict_fn(
+    Tenure, WarehouseToHome, NumberOfDeviceRegistered, SatisfactionScore,
+    MaritalStatus, NumberOfAddress, Complain, DaySinceLastOrder,
+    CashbackAmount, PreferedOrderCat, threshold_mode, custom_threshold, profit_threshold
+):
+    if pipe is None:
+        return "Model file missing", "N/A", "Ask the owner to upload churn_pipe.joblib"
+
+    row = pd.DataFrame([{
+        "Tenure": Tenure,
+        "WarehouseToHome": WarehouseToHome,
+        "NumberOfDeviceRegistered": NumberOfDeviceRegistered,
+        "SatisfactionScore": SatisfactionScore,
+        "MaritalStatus": MaritalStatus,
+        "NumberOfAddress": NumberOfAddress,
+        "Complain": Complain,  # "Yes"/"No" handled in engineer()
+        "DaySinceLastOrder": DaySinceLastOrder,
+        "CashbackAmount": CashbackAmount,
+        "PreferedOrderCat": PreferedOrderCat,
+    }])
+
+    row = add_missing_flags(row)
+    row = engineer(row)
+    X = align_to_training_columns(row)
+
+    prob = float(pipe.predict_proba(X)[:, 1][0])
+    thr = choose_threshold(threshold_mode, custom_threshold, profit_threshold)
+    decision = "Flag (likely churn)" if prob >= thr else "Do not flag"
+
+    why = flags_for_row(row.iloc[0])
+    return f"{prob:.3f}", decision, why
+
+def batch_predict_fn(file, threshold_mode, custom_threshold, profit_threshold):
+    if pipe is None:
+        return pd.DataFrame(), None
+
+    try:
+        df_in = pd.read_csv(file.name)
+    except Exception as e:
+        return pd.DataFrame({"error": [f"Failed to read CSV: {e}"]}), None
+
+    # Normalize complain
+    if "Complain" in df_in.columns:
+        df_in["Complain"] = normalize_complain(df_in["Complain"])
+    else:
+        df_in["Complain"] = 0
+
+    df_in = add_missing_flags(df_in)
+    df_in = engineer(df_in)
+    X = align_to_training_columns(df_in)
+
+    probs = pipe.predict_proba(X)[:, 1]
+    thr = choose_threshold(threshold_mode, custom_threshold, profit_threshold)
+    decision = np.where(probs >= thr, "Flag (likely churn)", "Do not flag")
+
+    # Lightweight "why"
+    whys = []
+    for _, s in df_in.iterrows():
+        whys.append(flags_for_row(s))
+
+    out = df_in.copy()
+    out["churn_prob"] = probs.round(4)
+    out["decision"] = decision
+    out["why"] = whys
+
+    # Save to temporary file that Gradio can serve
+    out_path = Path("scored.csv")
+    out.to_csv(out_path, index=False)
+
+    preview = out.head(25)
+    return preview, str(out_path)
+
+# ----------------- Gradio UI -----------------
 with gr.Blocks(title="E-commerce Churn Predictor") as demo:
     gr.Markdown("## E-commerce Churn Predictor\nGet churn probability, a decision flag, and **why** (risk flags).")
 
@@ -42,9 +295,9 @@ with gr.Blocks(title="E-commerce Churn Predictor") as demo:
                 NumberOfAddress = gr.Slider(1, 10, value=2, step=1, label="# Addresses on file")
                 DaySinceLastOrder = gr.Slider(0, 90, value=7, step=1, label="Days since last order")
                 CashbackAmount = gr.Slider(0, 350, value=150, step=1, label="Cashback amount")
-                Complain = gr.Radio(choices=["No","Yes"], value="No", label="Complained?")
-                PreferedOrderCat = gr.Dropdown(cat_choices, value=cat_choices[0], label="Preferred order category")
-                MaritalStatus = gr.Dropdown(marital_choices, value=marital_choices[0], label="Marital status")
+                Complain = gr.Radio(choices=["No", "Yes"], value="No", label="Complained?")
+                PreferedOrderCat = gr.Dropdown(ORDER_CATS, value=ORDER_CATS[0], label="Preferred order category")
+                MaritalStatus = gr.Dropdown(MARITALS, value=MARITALS[0], label="Marital status")
 
                 gr.Markdown("**Decision threshold**")
                 threshold_mode   = gr.Radio(["Recall (F2)", "Profit (ROI)", "Custom"], value="Recall (F2)")
@@ -68,7 +321,7 @@ with gr.Blocks(title="E-commerce Churn Predictor") as demo:
 
     with gr.Tab("Batch (CSV)"):
         gr.Markdown(
-            "Upload a CSV with these exact columns:\n\n"
+            "Upload a CSV with these columns:\n\n"
             f"`{', '.join(REQUIRED_COLS)}`\n\n"
             "Tip: `Complain` can be **Yes/No** or **1/0**."
         )
@@ -91,5 +344,6 @@ with gr.Blocks(title="E-commerce Churn Predictor") as demo:
         gr.Markdown("Top global drivers from a transparent logistic refit (odds ratios shown).")
         gr.Dataframe(value=drivers_df, interactive=False, wrap=True, label="Global drivers")
 
-# Choose a specific port to avoid conflicts in Colab
-demo.launch(server_name="0.0.0.0", server_port=7866, share=True, debug=True)
+# On Spaces, a plain launch() is perfect
+if __name__ == "__main__":
+    demo.launch()
