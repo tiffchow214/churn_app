@@ -35,22 +35,46 @@ def load_model():
         print("Model load warning:", e)
     return None
 
-def load_drivers_df():
-    """Load optional model_drivers.json for the drivers tab."""
+
+DRIVERS_JSON_PATH = Path("./model_drivers.json")
+
+def load_drivers_df() -> pd.DataFrame:
+    """Load drivers from model_drivers.json saved by Colab.
+    Supports payloads with:
+      - {"table": [ ...rows... ]}
+      - {"top_positive": [...], "top_negative": [...]}
+      - [ ...rows... ]  # plain list
+    """
     try:
-        if DRIVERS_JSON_PATH.exists():
-            with open(DRIVERS_JSON_PATH, "r") as f:
-                payload = json.load(f)
-            if isinstance(payload, dict) and (
-                "top_positive" in payload or "top_negative" in payload
-            ):
+        if not DRIVERS_JSON_PATH.exists():
+            return pd.DataFrame(columns=["feature","coef","odds_ratio"])
+
+        with open(DRIVERS_JSON_PATH, "r") as f:
+            payload = json.load(f)
+
+        rows = []
+        if isinstance(payload, dict):
+            if "table" in payload and isinstance(payload["table"], list):
+                rows = payload["table"]
+            elif ("top_positive" in payload) or ("top_negative" in payload):
                 rows = payload.get("top_positive", []) + payload.get("top_negative", [])
             else:
-                rows = payload
-            return pd.DataFrame(rows)
+                # try to find the first list-of-dicts inside the dict
+                for v in payload.values():
+                    if isinstance(v, list) and (len(v) == 0 or isinstance(v[0], dict)):
+                        rows = v
+                        break
+        elif isinstance(payload, list):
+            rows = payload
+
+        df = pd.DataFrame(rows)
+        # keep only the expected columns if present
+        keep = [c for c in ["feature","coef","odds_ratio"] if c in df.columns]
+        return df[keep] if keep else df
     except Exception as e:
         print("Drivers load warning:", e)
-    return pd.DataFrame(columns=["feature", "coef", "odds_ratio"])
+        return pd.DataFrame(columns=["feature","coef","odds_ratio"])
+
 
 # ----------------- Load artifacts once -----------------
 meta = load_meta()
