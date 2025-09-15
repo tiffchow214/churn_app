@@ -1,0 +1,156 @@
+{
+  "top_positive": [
+    {
+      "feature": "PreferedOrderCat_Others",
+      "coef": 1.8541102078706213,
+      "odds_ratio": 6.38601349732357
+    },
+    {
+      "feature": "TenureBand_12\u201324",
+      "coef": 1.4596765412445514,
+      "odds_ratio": 4.304566953267598
+    },
+    {
+      "feature": "Complain",
+      "coef": 0.7841396193107268,
+      "odds_ratio": 2.1905214473757297
+    },
+    {
+      "feature": "MaritalStatus_Single",
+      "coef": 0.6028865983499959,
+      "odds_ratio": 1.8273861241798168
+    },
+    {
+      "feature": "Tenure_was_missing",
+      "coef": 0.4166886687686299,
+      "odds_ratio": 1.5169301716733572
+    },
+    {
+      "feature": "NumberOfDeviceRegistered",
+      "coef": 0.383692963419587,
+      "odds_ratio": 1.4676947365210529
+    },
+    {
+      "feature": "NumberOfAddress",
+      "coef": 0.33788241517060463,
+      "odds_ratio": 1.4019756426461913
+    },
+    {
+      "feature": "PreferedOrderCat_Grocery",
+      "coef": 0.31419171585087313,
+      "odds_ratio": 1.3691521995663258
+    },
+    {
+      "feature": "SatisfactionScore",
+      "coef": 0.292971437309079,
+      "odds_ratio": 1.3404045043253408
+    },
+    {
+      "feature": "PreferedOrderCat_Fashion",
+      "coef": 0.2701373586368376,
+      "odds_ratio": 1.31014439802288
+    },
+    {
+      "feature": "WarehouseToHome_was_missing",
+      "coef": 0.23062089267527477,
+      "odds_ratio": 1.2593817081069676
+    },
+    {
+      "feature": "WarehouseToHome",
+      "coef": 0.1802728888978982,
+      "odds_ratio": 1.1975441150300334
+    },
+    {
+      "feature": "LowSatisfaction",
+      "coef": 0.1376424996097619,
+      "odds_ratio": 1.1475652219176158
+    },
+    {
+      "feature": "DaySinceLastOrder_was_missing",
+      "coef": 0.1255290856932915,
+      "odds_ratio": 1.1337481443317643
+    },
+    {
+      "feature": "FarFromWarehouse",
+      "coef": 0.09504124386328522,
+      "odds_ratio": 1.0997042102408878
+    }
+  ],
+  "top_negative": [
+    {
+      "feature": "Tenure",
+      "coef": -3.086468603890643,
+      "odds_ratio": 0.045662923885589346
+    },
+    {
+      "feature": "PreferedOrderCat_Laptop & Accessory",
+      "coef": -1.4839580745186924,
+      "odds_ratio": 0.22673846222596364
+    },
+    {
+      "feature": "TenureBand_6\u201312",
+      "coef": -0.9286878093636334,
+      "odds_ratio": 0.3950717798845401
+    },
+    {
+      "feature": "PreferedOrderCat_Mobile Phone",
+      "coef": -0.8636121330265295,
+      "odds_ratio": 0.4216363218684355
+    },
+    {
+      "feature": "EarlyTenure",
+      "coef": -0.6387154985404652,
+      "odds_ratio": 0.5279701671191322
+    },
+    {
+      "feature": "CashbackAmount",
+      "coef": -0.521211528669802,
+      "odds_ratio": 0.5938007054245318
+    },
+    {
+      "feature": "MaritalStatus_Married",
+      "coef": -0.33315832842366694,
+      "odds_ratio": 0.7166567180442108
+    },
+    {
+      "feature": "TenureBand_\u22646",
+      "coef": -0.3103776160559391,
+      "odds_ratio": 0.7331700471633835
+    },
+    {
+      "feature": "DevicesPerAddress",
+      "coef": -0.2627528739211106,
+      "odds_ratio": 0.7689318969578877
+    },
+    {
+      "feature": "MaritalStatus_Divorced",
+      "coef": -0.1788591951132293,
+      "odds_ratio": 0.836223635482242
+    },
+    {
+      "feature": "TenureBand_>24",
+      "coef": -0.1297420410118514,
+      "odds_ratio": 0.8783219727474135
+    },
+    {
+      "feature": "DaySinceLastOrder",
+      "coef": -0.12874564672903616,
+      "odds_ratio": 0.8791975638840906
+    },
+    {
+      "feature": "Complain_LowSat",
+      "coef": -0.12635742025342325,
+      "odds_ratio": 0.8812997960875607
+    },
+    {
+      "feature": "LowCashback",
+      "coef": -0.06277214450607126,
+      "odds_ratio": 0.939157441494046
+    },
+    {
+      "feature": "FarFromWarehouse",
+      "coef": 0.09504124386328522,
+      "odds_ratio": 1.0997042102408878
+    }
+  ]
+}
