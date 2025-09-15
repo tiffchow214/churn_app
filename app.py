@@ -8,7 +8,7 @@ import json, joblib, numpy as np, pandas as pd, gradio as gr
 HERE = Path(__file__).parent
 MODEL_PATH = HERE / "churn_pipe.joblib"
 META_PATH = HERE / "clean_meta_ready.json"
-DRIVERS_JSON_PATH = HERE / "model_drivers.json"  # optional but recommended
+DRIVERS_JSON_PATH = HERE / "model_drivers. (1)json"  
 
 # ---------- Safe loaders ----------
 def load_meta():
