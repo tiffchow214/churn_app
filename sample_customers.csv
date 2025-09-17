@@ -1,0 +1,51 @@
+tenure_months,delivery_distance_km,num_devices,satisfaction_score,num_addresses,days_since_last_order,cashback_amount,complaint,preferred_category,marital_status
+27,3.8,2,3,1,0,112.25,0,Mobile Phone,Single
+60,14.4,2,2,1,11,60.95,0,Others,Single
+60,7.0,2,3,1,17,90.77,1,Others,Single
+23,9.2,2,4,1,28,106.59,0,Laptop & Accessory,Single
+58,9.4,3,3,1,11,164.03,0,Others,Single
+50,7.5,2,1,2,11,78.19,0,Laptop & Accessory,Single
+39,10.5,1,3,1,2,173.51,0,Mobile Phone,Single
+51,3.7,1,5,1,0,0.0,0,Others,Single
+46,11.9,2,3,1,55,15.33,1,Mobile Phone,Single
+59,0.6,2,4,2,7,125.33,0,Others,Single
+23,0.4,2,4,1,5,317.05,0,Mobile Phone,Married
+4,0.4,1,4,1,6,54.85,0,Laptop & Accessory,Married
+27,3.9,5,4,3,14,264.41,0,Mobile Phone,Single
+19,9.8,2,5,1,18,177.05,0,Others,Single
+29,12.6,3,3,3,7,200.17,0,Laptop & Accessory,Single
+56,8.1,2,5,1,20,117.78,0,Mobile Phone,Single
+58,2.8,1,4,1,1,163.97,0,Mobile Phone,Married
+41,8.7,4,3,1,16,125.87,0,Mobile Phone,Single
+38,6.8,2,3,1,45,57.67,1,Others,Married
+17,22.9,2,4,1,15,109.67,0,Mobile Phone,Married
+0,5.3,1,4,1,4,135.74,0,Others,Single
+23,3.2,2,3,2,12,151.22,0,Mobile Phone,Single
+27,5.9,5,3,1,45,146.61,0,Laptop & Accessory,Single
+14,7.1,4,3,1,23,66.28,0,Others,Single
+48,6.3,1,2,1,48,97.51,1,Mobile Phone,Single
+10,6.2,3,3,1,17,112.85,0,Others,Married
+29,17.6,3,3,1,73,0.0,1,Others,Married
+9,21.0,2,4,1,3,221.99,0,Mobile Phone,Single
+21,13.4,3,2,1,26,127.48,0,Mobile Phone,Single
+59,1.4,1,4,2,42,161.66,0,Laptop & Accessory,Married
+40,18.0,2,4,3,18,178.66,0,Laptop & Accessory,Married
+25,5.9,3,4,1,2,124.1,0,Others,Single
+13,19.1,2,4,1,10,86.03,0,Others,Married
+3,13.4,3,4,2,8,141.13,0,Laptop & Accessory,Single
+53,13.1,2,4,1,9,107.93,0,Laptop & Accessory,Single
+29,1.6,2,5,2,18,197.23,0,Laptop & Accessory,Married
+38,5.5,3,4,2,8,93.51,0,Laptop & Accessory,Single
+17,0.3,1,3,1,16,151.86,1,Others,Married
+3,26.6,1,4,2,3,43.69,0,Mobile Phone,Single
+12,3.2,2,3,1,22,153.85,0,Mobile Phone,Single
+8,6.9,5,3,1,5,87.6,1,Others,Single
+12,6.3,2,4,1,14,180.51,0,Laptop & Accessory,Married
+8,9.7,4,2,3,55,155.59,0,Mobile Phone,Married
+35,1.2,2,3,2,25,115.88,0,Others,Married
+6,17.1,2,2,2,13,146.46,0,Others,Married
+36,16.1,1,3,1,50,136.98,0,Mobile Phone,Married
+34,7.6,3,4,1,24,258.54,0,Mobile Phone,Single
+54,8.9,2,4,1,4,110.35,0,Laptop & Accessory,Single
+29,15.4,1,3,1,10,116.25,0,Others,Single
+6,11.8,3,2,1,61,113.73,1,Others,Married
