@@ -7,9 +7,6 @@ Live app: https://huggingface.co/spaces/tiffcz214/ecommerce_churn_app
 Demo video:
 https://www.loom.com/share/bd6ca6ec9ee34eb1a966b8b1168ee4c3?sid=38898a4f-55ad-45bc-8888-9e268d075a49 
 
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
-](https://www.loom.com/share/bd6ca6ec9ee34eb1a966b8b1168ee4c3?sid=38898a4f-55ad-45bc-8888-9e268d075a49
-
 🚀 What this app does
 
 Single prediction: enter one customer’s attributes → get a churn probability, a flag (act / don’t act), and reasons.
